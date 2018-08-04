@@ -1,0 +1,4 @@
+requests
+python-daemon
+telepot
+python-dateutil
