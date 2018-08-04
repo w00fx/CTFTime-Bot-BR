@@ -6,5 +6,5 @@ Ter o Python3 instalado
 
 E instalar as bibliotecas necessarias usando o requirements.txt usando os seguinte comando:
  ```
-    pip install -r requirements.txt
+    pip3 install -r requirements.txt
 ```
