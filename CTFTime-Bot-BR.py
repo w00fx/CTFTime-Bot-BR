@@ -1,10 +1,26 @@
-import requests
-import daemon
+import json
+import os
+from botocore.vendored import requests
 import time
-import telepot
 from datetime import datetime
 from dateutil import tz
-from telepot.loop import MessageLoop
+
+URL_TELEGRAM = "https://api.telegram.org/bot{}/".format(os.environ['TELEGRAM_TOKEN'])
+
+horario_atual = str(time.time()).split('.')[0]
+
+URL_CTFTIME = 'https://ctftime.org/api/v1/events/?'
+HEADERS = {'User-Agent': 'Mozilla/5.0'}
+PARAMS = dict(
+    limit='5',
+    start=horario_atual,
+    finish=str(int(horario_atual) + 2629800)
+)
+
+
+def send_message(text, chat_id):
+    url = URL_TELEGRAM + "sendMessage?text={}&chat_id={}&parse_mode=markdown".format(text, chat_id)
+    requests.get(url)
 
 
 def convert_time(time):
@@ -20,7 +36,7 @@ def convert_time(time):
 
 
 def get_ctfs():
-    resp = requests.get(URL, params=PARAMS, headers=HEADERS)
+    resp = requests.get(URL_CTFTIME, params=PARAMS, headers=HEADERS)
     data = resp.json()
     mensagem = '*Próximos CTFs:*\n'
     for item in data:
@@ -32,27 +48,12 @@ def get_ctfs():
     return mensagem
 
 
-def handle(msg):
-    chat_id = msg['chat']['id']
-    command = msg['text']
-    if msg['text']:
+def handle(event, context):
+    msg = event
+    chat_id = msg['message']['chat']['id']
+    command = msg['message']['text']
+    if msg['message']['text']:
         if '/ctfs' in command[:5]:
-            bot.sendMessage(chat_id, get_ctfs(), parse_mode='Markdown')
-
-
-horario_atual = str(time.time()).split('.')[0]
-
-URL = 'https://ctftime.org/api/v1/events/?'
-HEADERS = {'User-Agent': 'Mozilla/5.0'}
-PARAMS = dict(
-    limit='5',
-    start=horario_atual,
-    finish=str(int(horario_atual) + 2629800)
-)
-
-with daemon.DaemonContext():
-    bot = telepot.Bot("SUA_BOT_API_AQUI")
-    MessageLoop(bot, handle).run_as_thread()
-    print('Estou escutando ...')
-    while 1:
-        time.sleep(10)
+            message = get_ctfs()
+            send_message(message, chat_id)
+            return '{"StatusCode": "200"}'
